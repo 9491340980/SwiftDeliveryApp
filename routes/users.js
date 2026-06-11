@@ -6,7 +6,14 @@ const router = express.Router();
 
 // GET /api/users/me
 router.get('/me', protect, async (req, res) => {
-  res.json({ success: true, user: req.user });
+  const u = req.user;
+  res.json({ success: true, user: {
+    id: u._id, name: u.name, phone: u.phone, email: u.email,
+    avatar: u.avatar, walletBalance: u.walletBalance, addresses: u.addresses,
+    referralCode: u.referralCode, isAdmin: u.isAdmin,
+    isVendor: u.isVendor, vendorStatus: u.vendorStatus,
+    restaurantId: u.restaurantId, vendorApplication: u.vendorApplication,
+  }});
 });
 
 // PUT /api/users/me

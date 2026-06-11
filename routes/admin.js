@@ -204,4 +204,50 @@ router.get('/users', async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
 });
 
+// ── Vendor Applications ──────────────────────────────────────────
+router.get('/vendor-applications', async (req, res) => {
+  try {
+    const { status = 'pending' } = req.query;
+    const filter = status === 'all' ? { vendorStatus: { $ne: 'none' } } : { vendorStatus: status };
+    const vendors = await User.find(filter).select('name phone email vendorStatus vendorApplication restaurantId createdAt').lean();
+    res.json({ success: true, vendors });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+router.put('/vendor-applications/:id/approve', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    const app = user.vendorApplication;
+    // Create the restaurant
+    const restaurant = new Restaurant({
+      name: app.restaurantName,
+      cuisines: app.cuisines ? app.cuisines.split(',').map(s => s.trim()) : [],
+      address: { line1: app.addressLine1, city: app.addressCity, state: app.addressState },
+      phone: app.phone,
+      description: app.description,
+      isOpen: true,
+      isActive: true,
+      managedBy: user._id,
+    });
+    await restaurant.save();
+    user.isVendor = true;
+    user.vendorStatus = 'approved';
+    user.restaurantId = restaurant._id;
+    await user.save();
+    res.json({ success: true, message: 'Vendor approved', restaurant });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+router.put('/vendor-applications/:id/reject', async (req, res) => {
+  try {
+    const { reason } = req.body;
+    await User.findByIdAndUpdate(req.params.id, {
+      vendorStatus: 'rejected',
+      'vendorApplication.rejectionReason': reason || 'Application not approved',
+    });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
 module.exports = router;

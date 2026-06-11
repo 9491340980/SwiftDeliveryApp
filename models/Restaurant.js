@@ -36,6 +36,7 @@ const restaurantSchema = new mongoose.Schema({
   tags: [{ type: String }],
   timings: [timingSchema],
   offerText: { type: String },
+  managedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 restaurantSchema.index({ 'address.lat': 1, 'address.lng': 1 });
