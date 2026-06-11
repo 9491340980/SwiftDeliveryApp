@@ -39,7 +39,8 @@ router.post('/register', [
     await user.save();
     await sendOTP(phone, otp);
 
-    res.json({ success: true, message: 'OTP sent', userId: user._id });
+    const devOtp = process.env.NODE_ENV !== 'production' ? otp : undefined;
+    res.json({ success: true, message: 'OTP sent', userId: user._id, ...(devOtp && { devOtp }) });
   } catch (err) {
     console.error('[REGISTER ERROR]', err);
     res.status(500).json({ success: false, message: err.message });
@@ -62,7 +63,8 @@ router.post('/login', [
     await user.save();
     await sendOTP(phone, otp);
 
-    res.json({ success: true, message: 'OTP sent', userId: user._id });
+    const devOtp = process.env.NODE_ENV !== 'production' ? otp : undefined;
+    res.json({ success: true, message: 'OTP sent', userId: user._id, ...(devOtp && { devOtp }) });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
