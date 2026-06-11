@@ -11,9 +11,11 @@ const app = express();
 
 app.use(helmet());
 const allowedOrigins = (process.env.CLIENT_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+const corsAllowAll = allowedOrigins.includes('*');
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true);
+    if (corsAllowAll) return cb(null, true);
     if (process.env.NODE_ENV !== 'production') return cb(null, true);
     if (allowedOrigins.includes(origin)) return cb(null, true);
     cb(new Error('CORS not allowed'));
