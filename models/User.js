@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema({
   walletBalance: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   isGuest: { type: Boolean, default: false },
+  isAdmin: { type: Boolean, default: false },
   fcmToken: { type: String },
   otp: { type: String },
   otpExpiry: { type: Date },

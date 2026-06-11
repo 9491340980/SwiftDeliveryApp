@@ -93,7 +93,7 @@ router.post('/verify-otp', [
     res.json({
       success: true,
       token,
-      user: { id: user._id, name: user.name, phone: user.phone, email: user.email, walletBalance: user.walletBalance },
+      user: { id: user._id, name: user.name, phone: user.phone, email: user.email, walletBalance: user.walletBalance, isAdmin: user.isAdmin, addresses: user.addresses },
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
