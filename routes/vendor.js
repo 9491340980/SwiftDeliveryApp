@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const vendorAuth = require('../middleware/vendorAuth');
-const authMiddleware = require('../middleware/auth');
+const { protect: authMiddleware } = require('../middleware/auth');
 const User = require('../models/User');
 const Restaurant = require('../models/Restaurant');
 const MenuItem = require('../models/MenuItem');
@@ -14,12 +14,12 @@ router.post('/apply', authMiddleware, async (req, res) => {
     if (user.isVendor && user.vendorStatus === 'approved') {
       return res.status(400).json({ success: false, message: 'Already an approved vendor' });
     }
-    const { restaurantName, cuisines, addressLine1, addressCity, addressState, phone, description } = req.body;
+    const { restaurantName, storeType, cuisines, addressLine1, addressCity, addressState, phone, description } = req.body;
     if (!restaurantName || !addressCity || !addressState) {
-      return res.status(400).json({ success: false, message: 'Restaurant name, city and state are required' });
+      return res.status(400).json({ success: false, message: 'Store name, city and state are required' });
     }
     user.vendorStatus = 'pending';
-    user.vendorApplication = { restaurantName, cuisines, addressLine1, addressCity, addressState, phone, description, appliedAt: new Date() };
+    user.vendorApplication = { restaurantName, storeType: storeType || 'restaurant', cuisines, addressLine1, addressCity, addressState, phone, description, appliedAt: new Date() };
     await user.save();
     res.json({ success: true, message: 'Application submitted! Admin will review within 24 hours.' });
   } catch (err) {

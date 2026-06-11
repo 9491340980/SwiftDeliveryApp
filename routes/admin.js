@@ -205,24 +205,31 @@ router.get('/users', async (req, res) => {
 });
 
 // ── Vendor Applications ──────────────────────────────────────────
-router.get('/vendor-applications', async (req, res) => {
+// Support both /vendors and /vendor-applications for compatibility
+const vendorListHandler = async (req, res) => {
   try {
     const { status = 'pending' } = req.query;
     const filter = status === 'all' ? { vendorStatus: { $ne: 'none' } } : { vendorStatus: status };
-    const vendors = await User.find(filter).select('name phone email vendorStatus vendorApplication restaurantId createdAt').lean();
+    const vendors = await User.find(filter).select('name phone email vendorStatus vendorApplication restaurantId createdAt isVendor').lean();
     res.json({ success: true, vendors });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-});
+};
 
-router.put('/vendor-applications/:id/approve', async (req, res) => {
+router.get('/vendors', vendorListHandler);
+router.get('/vendor-applications', vendorListHandler);
+
+const approveVendorHandler = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.vendorStatus === 'approved' && user.restaurantId) {
+      return res.json({ success: true, message: 'Already approved' });
+    }
     const app = user.vendorApplication;
-    // Create the restaurant
     const restaurant = new Restaurant({
       name: app.restaurantName,
-      cuisines: app.cuisines ? app.cuisines.split(',').map(s => s.trim()) : [],
+      storeType: app.storeType || 'restaurant',
+      cuisines: app.cuisines ? app.cuisines.split(',').map(s => s.trim()).filter(Boolean) : [],
       address: { line1: app.addressLine1, city: app.addressCity, state: app.addressState },
       phone: app.phone,
       description: app.description,
@@ -235,11 +242,11 @@ router.put('/vendor-applications/:id/approve', async (req, res) => {
     user.vendorStatus = 'approved';
     user.restaurantId = restaurant._id;
     await user.save();
-    res.json({ success: true, message: 'Vendor approved', restaurant });
+    res.json({ success: true, message: 'Vendor approved! Restaurant created.', restaurant });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-});
+};
 
-router.put('/vendor-applications/:id/reject', async (req, res) => {
+const rejectVendorHandler = async (req, res) => {
   try {
     const { reason } = req.body;
     await User.findByIdAndUpdate(req.params.id, {
@@ -248,6 +255,14 @@ router.put('/vendor-applications/:id/reject', async (req, res) => {
     });
     res.json({ success: true });
   } catch (err) { res.status(500).json({ success: false, message: err.message }); }
-});
+};
+
+// Support both PUT (old) and POST (new frontend) for approve/reject
+router.post('/vendors/:id/approve', approveVendorHandler);
+router.put('/vendors/:id/approve', approveVendorHandler);
+router.post('/vendors/:id/reject', rejectVendorHandler);
+router.put('/vendors/:id/reject', rejectVendorHandler);
+router.put('/vendor-applications/:id/approve', approveVendorHandler);
+router.put('/vendor-applications/:id/reject', rejectVendorHandler);
 
 module.exports = router;

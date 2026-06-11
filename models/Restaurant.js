@@ -9,6 +9,7 @@ const timingSchema = new mongoose.Schema({
 
 const restaurantSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
+  storeType: { type: String, enum: ['restaurant', 'grocery', 'pharmacy', 'bakery', 'electronics', 'other'], default: 'restaurant' },
   description: { type: String },
   logo: { type: String, default: '' },
   banner: { type: String, default: '' },
