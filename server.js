@@ -65,7 +65,19 @@ const PORT = process.env.PORT || 3000;
 
 // Start server ONLY after MongoDB connects
 connectDB().then(() => {
-  app.listen(PORT, () => console.log(`🚀  SwiftBite server running on http://localhost:${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`🚀  SwiftBite server running on http://localhost:${PORT}`);
+    // Self-ping every 14 min to prevent Render free tier spin-down
+    if (process.env.NODE_ENV === 'production') {
+      const https = require('https');
+      setInterval(() => {
+        const url = process.env.SELF_URL || `https://swiftdeliveryapp.onrender.com/api/health`;
+        https.get(url, (res) => {
+          console.log(`[keep-alive] ping ${res.statusCode}`);
+        }).on('error', () => {});
+      }, 14 * 60 * 1000);
+    }
+  });
 }).catch(err => {
   console.error('Could not connect to MongoDB, server not started:', err.message);
   process.exit(1);
